@@ -3,30 +3,24 @@
 //  Weather
 //
 //  Created by Macbook on 31.10.2023.
-//
+
+
 import UIKit
 import Combine
 import CoreLocation
 
 class WeatherViewModel {
+    //MARK: - Publisher
     @Published var weather: Weather?
     @Published var error: Error?
-    
     private var cancellables = Set<AnyCancellable>()
-
-    
+    //MARK: - Metods
     func fetchWeatherData(for location: String) {
         guard let encodedLocation = location.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             return
         }
-
-        let apiKey = "9b225a8d598b08412b9e88bc06835be7"
-        let urlString = "https://api.openweathermap.org/data/2.5/weather?q=\(encodedLocation)&units=metric&appid=\(apiKey)"
-        print (urlString)
-        guard let url = URL(string: urlString) else {
-            return
-        }
-        
+        let urlString = "https:/api.openweathermap.org/data/2.5/forecast?q=\(encodedLocation)&units=metric&appid=\(Constants.apiKey)"
+        guard let url = URL(string: urlString) else {return}
         URLSession.shared.dataTaskPublisher(for: url)
             .map { $0.data }
             .decode(type: Weather.self, decoder: JSONDecoder())
@@ -40,8 +34,15 @@ class WeatherViewModel {
             })
             .store(in: &cancellables)
     }
+    
+    func updateView(with weather: Weather?, views: ViewCurrentWeather) {
+        if let weather = weather {
+            views.listArray = weather.list
+            views.labelCity.text = weather.city.name
+            views.currentTempLabel.text = "\(weather.list[0].main.temp)°C"
+            views.tempminMax.text = "Макс.:\(weather.list[0].main.tempMax)°, мин.:\(weather.list[0].main.tempMin)°"
+        } else {
+            views.labelCity.text = "Ошибка загрузки данных"
+        }
+    }
 }
-
-
-
-
